@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Clawly Scientific Calculator</title>
+ <style>
+ * { box-sizing: border-box; }
+ body {
+ font-family: 'Segoe UI', system-ui, sans-serif;
+ background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+ min-height: 100vh;
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ margin: 0;
+ padding: 20px;
+ color: #fff;
+ }
+ .calculator {
+ background: rgba(255, 255, 255, 0.05);
+ backdrop-filter: blur(10px);
+ border-radius: 20px;
+ padding: 25px;
+ box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+ border: 1px solid rgba(255,255,255,0.1);
+ max-width: 500px;
+ width: 100%;
+ }
+ .display {
+ background: rgba(0,0,0,0.3);
+ border-radius: 15px;
+ padding: 20px;
+ margin-bottom: 15px;
+ text-align: right;
+ min-height: 90px;
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ }
+ .previous { color: rgba(255,255,255,0.5); font-size: 14px; min-height: 20px; }
+ .current { color: #fff; font-size: 28px; font-weight: 300; word-break: break-all; }
+ .mode-toggle {
+ display: flex;
+ gap: 10px;
+ margin-bottom: 15px;
+ justify-content: center;
+ }
+ .mode-btn {
+ background: rgba(255,255,255,0.1);
+ border: 1px solid rgba(255,255,255,0.2);
+ color: rgba(255,255,255,0.6);
+ padding: 8px 16px;
+ border-radius: 20px;
+ cursor: pointer;
+ font-size: 12px;
+ }
+ .mode-btn.active { background: #e94560; color: #fff; border-color: #e94560; }
+ .sci-grid {
+ display: none;
+ grid-template-columns: repeat(5, 1fr);
+ gap: 8px;
+ margin-bottom: 10px;
+ }
+ .sci-grid.active { display: grid; }
+ .buttons {
+ display: grid;
+ grid-template-columns: repeat(4, 1fr);
+ gap: 10px;
+ }
+ button {
+ border: none;
+ border-radius: 10px;
+ padding: 16px;
+ font-size: 16px;
+ cursor: pointer;
+ transition: all 0.15s;
+ font-weight: 500;
+ }
+ button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+ button:active { transform: translateY(0); }
+ .num { background: rgba(255,255,255,0.1); color: #fff; }
+ .op { background: #e94560; color: #fff; }
+ .func { background: #4a90e2; color: #fff; font-size: 13px; }
+ .const { background: #9b59b6; color: #fff; }
+ .eq { background: #0f0; color: #1a1a2e; grid-column: span 2; }
+ .ac { background: #ffd700; color: #1a1a2e; }
+ .zero { grid-column: span 2; }
+ .title { text-align: center; color: rgba(255,255,255,0.6); font-size: 11px; margin-bottom: 10px; letter-spacing: 2px; text-transform: uppercase; }
+ </style>
+</head>
+<body>
+ <div class="calculator">
+ <div class="title">Clawly Scientific Calculator</div>
+ <div class="mode-toggle">
+ <button class="mode-btn active" onclick="setMode('basic')">Basic</button>
+ <button class="mode-btn" onclick="setMode('scientific')">Scientific</button>
+ </div>
+ 
+ <div class="display">
+ <div class="previous" id="prev"></div>
+ <div class="current" id="curr">0</div>
+ </div>
+ 
+ <div class="sci-grid" id="sci">
+ <button class="func" onclick="fn('sin')">sin</button>
+ <button class="func" onclick="fn('cos')">cos</button>
+ <button class="func" onclick="fn('tan')">tan</button>
+ <button class="func" onclick="fn('log')">log</button>
+ <button class="func" onclick="fn('ln')">ln</button>
+ <button class="func" onclick="fn('asin')">sin⁻¹</button>
+ <button class="func" onclick="fn('acos')">cos⁻¹</button>
+ <button class="func" onclick="fn('atan')">tan⁻¹</button>
+ <button class="func" onclick="fn('sqrt')">√</button>
+ <button class="func" onclick="fn('cbrt')">∛</button>
+ <button class="const" onclick="ins('π')">π</button>
+ <button class="const" onclick="ins('e')">e</button>
+ <button class="func" onclick="fn('abs')">|x|</button>
+ <button class="func" onclick="fact()">n!</button>
+ <button class="func" onclick="ins('^')">x^y</button>
+ </div>
+ 
+ <div class="buttons">
+ <button class="ac" onclick="clr()">AC</button>
+ <button class="op" onclick="del()">⌫</button>
+ <button class="op" onclick="ins('%')">%</button>
+ <button class="op" onclick="ins('/')">÷</button>
+ <button class="num" onclick="n('7')">7</button>
+ <button class="num" onclick="n('8')">8</button>
+ <button class="num" onclick="n('9')">9</button>
+ <button class="op" onclick="ins('*')">×</button>
+ <button class="num" onclick="n('4')">4</button>
+ <button class="num" onclick="n('5')">5</button>
+ <button class="num" onclick="n('6')">6</button>
+ <button class="op" onclick="ins('-')">−</button>
+ <button class="num" onclick="n('1')">1</button>
+ <button class="num" onclick="n('2')">2</button>
+ <button class="num" onclick="n('3')">3</button>
+ <button class="op" onclick="ins('+')">+</button>
+ <button class="num zero" onclick="n('0')">0</button>
+ <button class="num" onclick="n('.')">.</button>
+ <button class="eq" onclick="calc()">=</button>
+ </div>
+ </div>
+
+ <script>
+ let expr = '';
+ const $ = id => document.getElementById(id);
+ const upd = () => { $('curr').textContent = expr || '0'; $('prev').textContent = ''; };
+ 
+ function setMode(m) {
+ document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === m));
+ $('sci').classList.toggle('active', m === 'scientific');
+ }
+ 
+ function n(x) { expr += x; upd(); }
+ function ins(x) { expr += x; upd(); }
+ function clr() { expr = ''; upd(); }
+ function del() { expr = expr.slice(0,-1); upd(); }
+ 
+ // Replace constants and power operator before evaluation
+ function evalExpr(str) {
+ let s = str.replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E').replace(/\^/g, '**');
+ return eval(s);
+ }
+ 
+ function calc() {
+ if(!expr) return;
+ try {
+ let result = evalExpr(expr);
+ // Round to avoid floating point issues
+ result = Math.round(result * 1e10) / 1e10;
+ expr = String(result);
+ upd();
+ } catch(e) { $('curr').textContent = 'Error'; }
+ }
+ 
+ function fn(f) {
+ if(!expr) return;
+ try {
+ let val = evalExpr(expr);
+ let r;
+ switch(f) {
+ case 'sin': r = Math.sin(val); break;
+ case 'cos': r = Math.cos(val); break;
+ case 'tan': r = Math.tan(val); break;
+ case 'asin': r = Math.asin(val); break;
+ case 'acos': r = Math.acos(val); break;
+ case 'atan': r = Math.atan(val); break;
+ case 'log': r = Math.log10(val); break;
+ case 'ln': r = Math.log(val); break;
+ case 'sqrt': r = Math.sqrt(val); break;
+ case 'cbrt': r = Math.cbrt(val); break;
+ case 'abs': r = Math.abs(val); break;
+ }
+ expr = String(Math.round(r*1e10)/1e10);
+ upd();
+ } catch(e) { $('curr').textContent = 'Error'; }
+ }
+ 
+ function fact() {
+ if(!expr) return;
+ try {
+ let val = evalExpr(expr);
+ if(val < 0 || val !== Math.floor(val)) { $('curr').textContent = 'Error'; return; }
+ let r = 1;
+ for(let i = 2; i <= val; i++) r *= i;
+ expr = String(r);
+ upd();
+ } catch(e) { $('curr').textContent = 'Error'; }
+ }
+ 
+ // Keyboard support
+ document.addEventListener('keydown', e => {
+ if(e.key >= '0' && e.key <= '9') n(e.key);
+ else if(e.key === '.') n('.');
+ else if(e.key === '+') ins('+');
+ else if(e.key === '-') ins('-');
+ else if(e.key === '*') ins('*');
+ else if(e.key === '/') ins('/');
+ else if(e.key === '%') ins('%');
+ else if(e.key === '^') ins('^');
+ else if(e.key === 'Enter') { e.preventDefault(); calc(); }
+ else if(e.key === 'Backspace') del();
+ else if(e.key === 'Escape') clr();
+ });
+ </script>
+</body>
+</html>
