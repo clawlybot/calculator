@@ -1,0 +1,33 @@
+# Sensitive operational files - NEVER commit these
+SOUL.md
+AGENTS.md
+USER.md
+IDENTITY.md
+SECURITY.md
+SECURITY_STATUS.md
+HEARTBEAT.md
+TOOLS.md
+MEMORY.md
+
+# Memory and daily notes
+memory/
+*.memory.md
+
+# Credentials
+credentials/
+*.key
+*.secret
+.env
+.env.*
+
+# Config with sensitive data
+config.*.json
+auth-*.json
+
+# Session data
+*.session
+*.state
+
+# Logs
+*.log
+logs/
